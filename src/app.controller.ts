@@ -1,5 +1,5 @@
-// 👇 新增引入了 Delete 和 Param
-import { Controller, Get, Post, Body, Delete, Param } from '@nestjs/common'; 
+// 👇 新增引入了 Patch 
+import { Controller, Get, Post, Body, Delete, Param, Patch } from '@nestjs/common'; 
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
@@ -8,7 +8,7 @@ import { User, UserDocument } from './user.schema';
 export class AppController {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  // 1. 读取数据的房间 (GET)
+  // 1. 读取数据的房间 (GET - Read)
   @Get('all')
   async getAllUsers() {
     const users = await this.userModel.find().exec();
@@ -18,7 +18,7 @@ export class AppController {
     return users;
   }
 
-  // 2. 写入数据的房间 (POST)
+  // 2. 写入数据的房间 (POST - Create)
   @Post('add')
   async addUser(@Body() body: any) {
     const newUser = new this.userModel({
@@ -29,18 +29,36 @@ export class AppController {
     return { message: '太牛了！NestJS 成功把数据永久保存在 MongoDB 啦！' };
   }
 
-  // 👇 3. 新增的“拆迁办”专属通道 (DELETE)
-  @Delete(':id') // 👈 冒号代表这是一个动态的占位符，用来接收你发来的专属 _id
+  // 3. 销毁数据的通道 (DELETE - Delete)
+  @Delete(':id') 
   async deleteUser(@Param('id') id: string) {
-    // 让高级搬运工去金库里根据 _id 找到这特条数据，并直接销毁！
     const result = await this.userModel.findByIdAndDelete(id).exec();
-    
-    // 如果找不到这条数据（可能已经被删了，或者 id 填错了）
     if (!result) {
       return { message: '找不到这条数据，是不是已经删过啦？' };
     }
-    
-    // 销毁成功后的欢呼
     return { message: `报告总管：ID为 ${id} 的数据已被彻底销毁！💥` };
+  }
+
+  // 👇 4. 新增的修改通道 (PATCH - Update)
+  @Patch(':id') // 同样需要占位符来接收 _id，告诉搬运工要改哪一条
+  async updateUser(@Param('id') id: string, @Body() body: any) {
+    // 拿着涂改液去金库里找数据并修改
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      id, 
+      {
+        name: body.name,
+        milestone: body.milestone
+      },
+      { new: true } // 💡 极其关键的一句：告诉 MongoDB，改完之后，把“最新版本”的数据拿回来给我看看！
+    ).exec();
+
+    if (!updatedUser) {
+      return { message: '找不到这条数据，修改失败哦！' };
+    }
+
+    return { 
+      message: '太酷了！数据更新成功！✨',
+      data: updatedUser // 把改完后的最新长相展示出来
+    };
   }
 }
