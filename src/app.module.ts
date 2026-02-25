@@ -1,16 +1,18 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule } from '@nestjs/config'; // 👈 新增：引入保险箱总管
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-// 👇 新增：引入刚才画好的图纸
-import { User, UserSchema } from './user.schema'; 
+import { User, UserSchema } from './user.schema';
 
 @Module({
   imports: [
-    // 这是咱们之前接通大门的钥匙（记得填入你真实的连接代码！）
-    MongooseModule.forRoot('mongodb+srv://jlzl011023_db_user:aojoxPusPI0qKke5@cluster0.v0djua2.mongodb.net/?appName=Cluster0'),
+    // 👈 新增：必须放在最前面！让大楼启动时第一时间去读取 .env 保险箱
+    ConfigModule.forRoot(), 
     
-    // 👇 新增：告诉总管，我们要根据图纸，建一个专门放 User 资料的金库抽屉
+    // 👇 修改：以前这里是一大串明文密码，现在换成 process.env.MONGODB_URI（去保险箱拿钥匙）
+    MongooseModule.forRoot(process.env.MONGODB_URI!),
+    
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
   controllers: [AppController],
