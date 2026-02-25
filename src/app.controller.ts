@@ -3,6 +3,7 @@ import { Controller, Get, Post, Body, Delete, Param, Patch } from '@nestjs/commo
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
+import { CreateUserDto } from './user.dto';
 
 @Controller('user')
 export class AppController {
@@ -20,7 +21,8 @@ export class AppController {
 
   // 2. 写入数据的房间 (POST - Create)
   @Post('add')
-  async addUser(@Body() body: any) {
+  // 👇 看这里：any 变成了 CreateUserDto！
+  async addUser(@Body() body: CreateUserDto) { 
     const newUser = new this.userModel({
       name: body.name,
       milestone: body.milestone,
