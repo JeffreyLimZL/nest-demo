@@ -41,12 +41,13 @@ export class AppController {
   }
 
   // 4. 修改数据的通道 (PATCH - Update)
+  // 4. 修改数据的通道 (PATCH - Update)
   @Patch(':id') 
-  async updateUser(@Param('id') id: string, @Body() body: UpdateUserDto) { // 👈 这里换成了灵活的 UpdateUserDto！
+  async updateUser(@Param('id') id: string, @Body() body: UpdateUserDto) { 
     const updatedUser = await this.userModel.findByIdAndUpdate(
       id, 
-      body, // 👈 因为有安检员保护，我们可以直接把 body 安全地交给金库
-      { new: true } // 💡 告诉 MongoDB：把修改后的“最新版本”拿回来给我看看！
+      body, // 👈 极其关键！这里直接写 body，千万不能写成 { name: body.name } 了
+      { new: true } 
     ).exec();
 
     if (!updatedUser) {
