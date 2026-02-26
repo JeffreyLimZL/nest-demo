@@ -1,9 +1,9 @@
-// 👇 新增引入了 Patch 
 import { Controller, Get, Post, Body, Delete, Param, Patch } from '@nestjs/common'; 
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
-import { CreateUserDto } from './user.dto';
+// 👇 引入我们写好的安检规矩（包含了新增的 CreateUserDto 和修改专用的 UpdateUserDto）
+import { CreateUserDto, UpdateUserDto } from './user.dto'; 
 
 @Controller('user')
 export class AppController {
@@ -21,8 +21,7 @@ export class AppController {
 
   // 2. 写入数据的房间 (POST - Create)
   @Post('add')
-  // 👇 看这里：any 变成了 CreateUserDto！
-  async addUser(@Body() body: CreateUserDto) { 
+  async addUser(@Body() body: CreateUserDto) { // 👈 这里用的是极其严格的 CreateUserDto
     const newUser = new this.userModel({
       name: body.name,
       milestone: body.milestone,
@@ -41,26 +40,22 @@ export class AppController {
     return { message: `报告总管：ID为 ${id} 的数据已被彻底销毁！💥` };
   }
 
-  // 👇 4. 新增的修改通道 (PATCH - Update)
-  @Patch(':id') // 同样需要占位符来接收 _id，告诉搬运工要改哪一条
-  async updateUser(@Param('id') id: string, @Body() body: any) {
-    // 拿着涂改液去金库里找数据并修改
+  // 4. 修改数据的通道 (PATCH - Update)
+  @Patch(':id') 
+  async updateUser(@Param('id') id: string, @Body() body: UpdateUserDto) { // 👈 这里换成了灵活的 UpdateUserDto！
     const updatedUser = await this.userModel.findByIdAndUpdate(
       id, 
-      {
-        name: body.name,
-        milestone: body.milestone
-      },
-      { new: true } // 💡 极其关键的一句：告诉 MongoDB，改完之后，把“最新版本”的数据拿回来给我看看！
+      body, // 👈 因为有安检员保护，我们可以直接把 body 安全地交给金库
+      { new: true } // 💡 告诉 MongoDB：把修改后的“最新版本”拿回来给我看看！
     ).exec();
 
     if (!updatedUser) {
-      return { message: '找不到这条数据，修改失败哦！' };
+      return { message: '找不到这条数据，是不是 ID 填错啦？' };
     }
 
     return { 
       message: '太酷了！数据更新成功！✨',
-      data: updatedUser // 把改完后的最新长相展示出来
+      data: updatedUser 
     };
   }
 }
